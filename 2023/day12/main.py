@@ -614,20 +614,141 @@ def part1_new():
     # time: 0.06576204299926758 [s], result: 6827
         
 def part2():
+
+    def gen(A, B, targets, targets_len, target_idx, pattern_position, prev_pattern_end, history, pattern):
+        n = len(pattern)
+        if B[pattern_position - prev_pattern_end] == 0 or targets_len > n - pattern_position:
+            return 0
+
+        # B[l][p] = can there be a pause of length l starting at position p in the pattern?
+        # A[l][p] = can an item of length l be placed at position p in the pattern?
+
+        l = targets[target_idx]
+        for p in range(pattern_position, n):
+            if A[l][p] == 0:
+                continue
+            history_local = history.copy()
+            history_local.append((l, pattern_position))
+            
+
+
+        # if target_idx == len(targets):
+        #     # print('OK', targets_len, pattern_idx, n, history)
+        #     # pout = np.zeros(n, dtype = int)
+        #     # for i, c in enumerate(history):
+        #     #     clen = c[0]
+        #     #     cpos = c[1]
+        #     #     pout[cpos:cpos + clen] = 1
+        #     # pout_str = ''
+        #     # for c in pout:
+        #     #     if c == 1:
+        #     #         pout_str += '#'
+        #     #     else:
+        #     #         pout_str += '.'
+        #     # print(pout_str)
+        #     return 1
+
+        # if pattern_idx >= n or targets_len > (n - pattern_idx):
+        #     # print('   ', target_idx, pattern_idx)
+        #     # print(pattern_idx >= n, targets_len, targets_len > (n - pattern_idx))
+        #     return 0
+
+
+        # tn = targets[target_idx]
+        # # print(pattern_idx, target_idx, targets_len)
+        # # print(pattern_idx >= n or targets_len > (n - pattern_idx))
+        # # print(target_idx == len(targets))
+        # # print(A[pattern_idx, tn - 1] == 0)
+
+        # # A[r, c] = can an item of length (c + 1) be placed at position r?
+        # if A[pattern_idx, tn - 1] == 0:
+        #     return gen(A, B, targets, targets_len, target_idx, pattern_idx + 1, history, pattern)
+        # # B[r, c] = does an item of length (c + 1) HAVE to be placed at position r?
+        # if pattern[pattern_idx] == '#':
+        #     history_tmp = history.copy()
+        #     history_tmp.append((tn, pattern_idx))
+        #     return gen(A, B, targets, targets_len - (tn + 1), target_idx + 1, pattern_idx + tn + 1, history_tmp, pattern)
+        # else:
+        #     out = 0
+        #     for cc in range(n - pattern_idx):
+        #         # print('c:', cc)
+        #         # if target_idx <= 1:
+        #         #     print('F', target_idx, pattern_idx + c)
+        #         # print('  ', B[pattern_idx, :cc + 1], cc,n - pattern_idx)
+        #         if A[pattern_idx + cc, tn - 1] == 1 and B[pattern_idx - 1, cc] == 0:
+        #             history_tmp = history.copy()
+        #             history_tmp.append((tn, pattern_idx + cc))
+        #             # print(target_idx, pattern_idx, c, B[pattern_idx])
+        #             tmp = gen(A, B, targets, targets_len - (tn + 1), target_idx + 1, pattern_idx + tn + 1 + cc, history_tmp, pattern)
+        #             out += tmp
+        #             if tmp == 0:
+        #                 break
+
+        # return out
+
+
     t0 = time()
     answer = 0
     with open('input.txt', 'r') as f:
         lines = f.readlines()
 
+        # lidx = 8
         ninvalid = 0
-        # for i, line in enumerate(lines[20:21]):
+        # for i, line in enumerate(lines[lidx:lidx + 1]):
         for i, line in enumerate(lines):
-            # tmp = parse_line_part2_exp(line.strip())
-            tmp = parse_line_part2(line.strip())
-            # if tmp != tmp2:
-            #     print(i, tmp, tmp2)
-            #     ninvalid += 1
-            print(i, tmp)
+            tmp = line.split(' ')
+            pattern = tmp[0]
+            targets_ = [int(v) for v in tmp[1].split(',')]
+            targets = []
+            for r in range(1):
+                for t in targets_:
+                    targets.append(t)
+
+            n = len(pattern)
+
+            # A[l] = list of positions at which an item of length l can be placed
+            A = {}
+            for t in targets_:
+                if t in A:
+                    continue
+
+                Aloc = np.zeros(n, dtype = int)
+                for r in range(n - t):
+                    if '.' not in pattern[r:r + t]:
+                        Aloc[r] = 1
+                    if r - 1 >= 0:
+                        if pattern[r - 1] == '#':
+                            Aloc[r] = 0
+                    if r + t < n:
+                        if pattern[r + t] == '#':
+                            Aloc[r] = 0
+                A[t] = set(tuple([i for i in range(n) if Aloc[i] == 1]))
+            print(pattern)
+            for l in A:
+                print(l, A[l])
+
+            # B[l] = list of positions at which an empty space of length l cannot be placed
+            B = {}
+            for t in range(n):
+                if t in B:
+                    continue
+                Bloc = np.zeros(n, dtype = int)
+                for r in range(n - t):
+                    if '#' not in pattern[r:r + t]:
+                        Bloc[r] = 1
+                B[t] = set(tuple([i for i in range(n) if Bloc[i] == 1]))
+            print(pattern)
+            for l in B:
+                print(l, B[l])
+
+            # tmp = gen(A, B, targets, np.sum(targets) + len(targets) - 1, 0, 0, 0, history = [], pattern = pattern)
+            tmp = 0
+            tmp2 = parse_line_exp(line.strip())
+            # print(ncalls)
+
+            if tmp2 != tmp:
+                print(i, tmp2, tmp, pattern, targets)
+                break
             answer += tmp
     t1 = time()
     print(t1 - t0, answer, '# of invalid', ninvalid)
