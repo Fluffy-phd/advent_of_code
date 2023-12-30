@@ -108,6 +108,52 @@ def part1():
 
     print(answer)
 
+def get_area(color, vertex_colors, vertex2coords_map, horizontal_delimiters, vertical_delimiters):
+    area = 0
+    for u in range(len(vertex_colors)):
+        if vertex_colors[u] != color:
+            continue
+
+        u_coords = vertex2coords_map[u]
+        # print(u_coords)
+        area += (horizontal_delimiters[u_coords[1] + 1] - horizontal_delimiters[u_coords[1]]) * (vertical_delimiters[u_coords[0] + 1] - vertical_delimiters[u_coords[0]])
+
+    return area
+
+def flood_fill_part2(color, vertex_colors, neighbors, s):
+
+    active_vertices = [s]
+    vertex_colors[s] = color
+
+    while len(active_vertices) > 0:
+        active_vertices_new = []
+
+        for u in active_vertices:
+            for v in neighbors[u]:
+                if vertex_colors[v] < 0:
+                    vertex_colors[v] = color
+                    active_vertices_new.append(v)
+        active_vertices = active_vertices_new
+
+def is_part_of_border(edge, lines):
+    for l in lines:
+        if edge[0][0] >= l[0][0] and edge[0][1] <= l[0][1] and edge[1][0] >= l[1][0] and edge[1][1] <= l[1][1]:
+            # print(edge, l)
+            return True
+
+    return False
+
+def print_colors(vertex_colors, coords2vertex_map, nrow_vertices, ncol_vertices, color, fn):
+    
+    with open(fn, 'w') as f:
+        for r in range(nrow_vertices):
+            for c in range(ncol_vertices):
+                if vertex_colors[coords2vertex_map[r, c]] == color:
+                    f.write('#')
+                else:
+                    f.write('.')
+            f.write('\n')
+
 def part2():
 
     dirmap = {}
@@ -118,6 +164,7 @@ def part2():
 
     commands = []
 
+    edge_len = 0
     with open('input.txt', 'r') as f:
         lines = f.readlines()
 
@@ -133,12 +180,13 @@ def part2():
 
             direction = dirmap[colorcode[-1]]
             amount = int(colorcode[1:-1], 16)
+            edge_len += amount
 
             # print(direction, amount, colorcode)
             commands.append((direction, amount))
         
 
-    print(commands)
+    # print(commands)
 
     horizontal_delimiters = [0]
     vertical_delimiters = [0]
@@ -185,34 +233,92 @@ def part2():
                 vertical_delimiters.append(current_position_row)
         lines.append([(col1, col2), (row1, row2)])
 
-    print(lines)
+    # print()
+    # for l in lines:
+    #     print(l)
+    # print()
+    # print(lines)
     horizontal_delimiters.sort()
     vertical_delimiters.sort()
-    horizontal_invalid_lines = []
-    vertical_invalid_lines = []
-    for i in range(1, len(horizontal_delimiters)):
-        for j in range(1, len(vertical_delimiters)):
-            top_edge = (vertical_delimiters[j - 1], horizontal_delimiters[i - 1]), (vertical_delimiters[j - 1], horizontal_delimiters[i])
-            bottom_edge = (vertical_delimiters[j], horizontal_delimiters[i - 1]), (vertical_delimiters[j], horizontal_delimiters[i])
-            left_edge = (vertical_delimiters[j - 1], horizontal_delimiters[i - 1]), (vertical_delimiters[j - 1], horizontal_delimiters[i])
-            right_edge = (vertical_delimiters[j], horizontal_delimiters[i - 1]), (vertical_delimiters[j], horizontal_delimiters[i])
+    # print(vertical_delimiters)
+    # print(horizontal_delimiters)
+    # horizontal_invalid_lines = []
+    # vertical_invalid_lines = []
+    # for i in range(1, len(horizontal_delimiters)):
+    #     for j in range(1, len(vertical_delimiters)):
+    #         top_edge = ((vertical_delimiters[j - 1], horizontal_delimiters[i - 1]), (vertical_delimiters[j - 1], horizontal_delimiters[i]))
+    #         bottom_edge = ((vertical_delimiters[j], horizontal_delimiters[i - 1]), (vertical_delimiters[j], horizontal_delimiters[i]))
+    #         left_edge = ((vertical_delimiters[j - 1], horizontal_delimiters[i - 1]), (vertical_delimiters[j - 1], horizontal_delimiters[i]))
+    #         right_edge = ((vertical_delimiters[j], horizontal_delimiters[i - 1]), (vertical_delimiters[j], horizontal_delimiters[i]))
+
+    #         rectangles.append(top_edge)
+    nrow_vertices = (len(vertical_delimiters) - 1)
+    ncol_vertices = (len(horizontal_delimiters) - 1)
+    nvertices = nrow_vertices * ncol_vertices
+    neighbors = [[] for _ in range(nvertices)]    
+
+    coords2vertex_map = np.zeros((nrow_vertices, ncol_vertices), dtype = int)
+    vertex2coords_map = []
+    for row_idx in range(nrow_vertices):
+        for col_idx in range(ncol_vertices):
+            coords2vertex_map[row_idx, col_idx] = len(vertex2coords_map)
+            vertex2coords_map.append((row_idx, col_idx))
+
+    for row_idx in range(nrow_vertices):
+        for col_idx in range(ncol_vertices):
             
+            u = coords2vertex_map[row_idx, col_idx]
 
-    # print(horizontal_delimiters, vertical_delimiters)
+            if col_idx < ncol_vertices - 1:
+                right_edge = [(horizontal_delimiters[col_idx + 1], horizontal_delimiters[col_idx + 1]), (vertical_delimiters[row_idx], vertical_delimiters[row_idx + 1])]
+                if not is_part_of_border(right_edge, lines):
+                    v = coords2vertex_map[row_idx, col_idx + 1]
+                    neighbors[u].append(v)
+                    neighbors[v].append(u)
 
-    #construct rectangles
-    rectangles = []
-    for i in range(1, len(horizontal_delimiters)):
-        for j in range(1, len(vertical_delimiters)):
-            width = (vertical_delimiters[j - 1], vertical_delimiters[j])
-            height = (horizontal_delimiters[i - 1], horizontal_delimiters[i])
-            rectangles.append((width, height))
+            if row_idx < nrow_vertices - 1:
+                bottom_edge = [(horizontal_delimiters[col_idx], horizontal_delimiters[col_idx + 1]), (vertical_delimiters[row_idx + 1], vertical_delimiters[row_idx + 1])]
+                if not is_part_of_border(bottom_edge, lines):
+                    v = coords2vertex_map[row_idx + 1, col_idx]
+                    neighbors[u].append(v)
+                    neighbors[v].append(u)
+            
+            # return
 
-    # print(rectangles)
+    # print()
+    # # print(neighbors)
+    # for u in range(nvertices):
+    #     print(u, neighbors[u])
+    # print()
+    # flood fill
+    vertex_colors = -np.ones(nvertices, dtype = int)
+    color = 0
+    while np.min(vertex_colors) < 0:
+        for r in range(nrow_vertices):
+            for c in range(ncol_vertices):
+                if vertex_colors[coords2vertex_map[r, c]] < 0:
+                    flood_fill_part2(color, vertex_colors, neighbors, coords2vertex_map[r, c])
+                    # print(vertex_colors)
+                    color += 1
 
-    for rectangle in rectangles:
-        is_valid = False
-        for line in lines:
+    print_colors(vertex_colors, coords2vertex_map, nrow_vertices, ncol_vertices, 0, 'flood0.txt')
+    print_colors(vertex_colors, coords2vertex_map, nrow_vertices, ncol_vertices, 1, 'flood1.txt')
+    print_colors(vertex_colors, coords2vertex_map, nrow_vertices, ncol_vertices, 2, 'flood2.txt')
+    print_colors(vertex_colors, coords2vertex_map, nrow_vertices, ncol_vertices, 3, 'flood3.txt')
+    print_colors(vertex_colors, coords2vertex_map, nrow_vertices, ncol_vertices, 4, 'flood4.txt')
+
+    area0 = get_area(0, vertex_colors, vertex2coords_map, horizontal_delimiters, vertical_delimiters)
+    area1 = get_area(1, vertex_colors, vertex2coords_map, horizontal_delimiters, vertical_delimiters)
+    area2 = get_area(2, vertex_colors, vertex2coords_map, horizontal_delimiters, vertical_delimiters)
+    area3 = get_area(3, vertex_colors, vertex2coords_map, horizontal_delimiters, vertical_delimiters)
+    area4 = get_area(4, vertex_colors, vertex2coords_map, horizontal_delimiters, vertical_delimiters)
+    print(area0 + edge_len // 2 + 1)
+    print(area1 + edge_len // 2 + 1)
+    print(area2 + edge_len // 2 + 1)
+    print(area3 + edge_len // 2 + 1)
+    print(area4 + edge_len // 2 + 1)
+
+    # area1: 102000662718092
 
 
 # part1()
