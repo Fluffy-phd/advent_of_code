@@ -689,31 +689,28 @@ def part2():
 
     t0 = time()
     answer = 0
-    with open('input.txt', 'r') as f:
+    with open('input_test.txt', 'r') as f:
         lines = f.readlines()
 
-        # lidx = 8
+        lidx = 8
         ninvalid = 0
-        # for i, line in enumerate(lines[lidx:lidx + 1]):
-        for i, line in enumerate(lines):
+        # for ii, line in enumerate(lines[lidx:lidx + 1]):
+        for ii, line in enumerate(lines):
             tmp = line.split(' ')
             pattern = tmp[0]
-            targets_ = [int(v) for v in tmp[1].split(',')]
-            targets = []
-            for r in range(1):
-                for t in targets_:
-                    targets.append(t)
+            targets = [int(v) for v in tmp[1].split(',')]
 
             n = len(pattern)
+            m = len(targets)
 
             # A[l] = list of positions at which an item of length l can be placed
             A = {}
-            for t in targets_:
+            for t in targets:
                 if t in A:
                     continue
 
                 Aloc = np.zeros(n, dtype = int)
-                for r in range(n - t):
+                for r in range(n - t + 1):
                     if '.' not in pattern[r:r + t]:
                         Aloc[r] = 1
                     if r - 1 >= 0:
@@ -722,12 +719,12 @@ def part2():
                     if r + t < n:
                         if pattern[r + t] == '#':
                             Aloc[r] = 0
-                A[t] = set(tuple([i for i in range(n) if Aloc[i] == 1]))
+                A[t] = (tuple([i for i in range(n) if Aloc[i] == 1]))
             print(pattern)
             for l in A:
                 print(l, A[l])
 
-            # B[l] = list of positions at which an empty space of length l cannot be placed
+            # B[l] = list of positions at which an empty space of length l CAN BE placed
             B = {}
             for t in range(n):
                 if t in B:
@@ -736,10 +733,40 @@ def part2():
                 for r in range(n - t):
                     if '#' not in pattern[r:r + t]:
                         Bloc[r] = 1
-                B[t] = set(tuple([i for i in range(n) if Bloc[i] == 1]))
+                # B[t] = set(tuple([i for i in range(n) if Bloc[i] == 1]))
+                B[t] = Bloc
             print(pattern)
-            for l in B:
-                print(l, B[l])
+            # for l in B:
+            #     print(l, B[l])
+
+            def get_current_possibilities(l, valid_placements, invalid_empty_spaces, S, pos_init, pos_limit):
+                S.fill(0)
+                print('limits:', pos_init, pos_limit)
+                for v in valid_placements[l]:
+                    if v >= pos_init and v < pos_limit:
+                        S[v] = 1
+
+                # I = invalid_empty_spaces[l]
+                # print(I)
+                
+                # # forbidden_len = position_index
+                # for i in range(len(S)):
+                #     if I[i] == 0:
+                #         S[i + 1:] = 0
+                #         break
+
+
+
+            sol = np.zeros((m, n), dtype = int)
+            idx_start = 0
+            seq_len = np.sum(targets) + m
+            for i in range(m):
+                get_current_possibilities(targets[i], A, B, sol[i, :], idx_start, n - seq_len + 2)
+                idx_start += 1 + targets[i]
+                seq_len -= (1 + targets[i])
+            print(sol)
+            # print(sol_cummulative)
+
 
             # tmp = gen(A, B, targets, np.sum(targets) + len(targets) - 1, 0, 0, 0, history = [], pattern = pattern)
             tmp = 0
@@ -747,7 +774,7 @@ def part2():
             # print(ncalls)
 
             if tmp2 != tmp:
-                print(i, tmp2, tmp, pattern, targets)
+                print(ii, tmp2, tmp, pattern, targets)
                 break
             answer += tmp
     t1 = time()
@@ -757,14 +784,143 @@ def part2():
         
 
 # part1_new()
-part2()
+# part2()
+    
 
-# ?????.???????## 3,1,6
-# ###?#.??. 3,1
-# ###??.#?. 3,1
-# ###??.?#. 3,1
-# ?###?.#?. 3,1
-# ?###?.?#. 3,1
-# ??###.#?. 3,1
-# ??###.?#. 3,1
+# to remember already computed variants
+solutions = {}
 
+def recursive_search(P, T):
+    m = len(T)
+    k = len(P)
+    # print(P, T)
+    # print('  A')
+    if k == 0:
+        if m > 0:
+            return 0
+        return 1
+    
+    # print('  B')
+    if m == 0:
+        if '#' in P:
+            return 0
+        return 1
+    
+    # print('  C')
+    if np.sum(T) + m - 1 > k:
+        return 0
+    
+
+    # print('  D')
+    sol_key = (P, T)
+    if sol_key in solutions:
+        return solutions[sol_key]
+
+    result = 0
+
+    # print('  E')
+
+    #place here
+    if ('.' not in P[:T[0]] and '#' not in P[T[0]:T[0]+1]):
+        result += recursive_search(P[T[0] + 1:], T[1:])
+    #or wait
+    if '#' not in P[:1]:
+        result += recursive_search(P[1:], T)
+
+    # if ('#' in P[:1]) and ('.' not in P[:T[0]] and '#' not in P[T[0]:T[0]+1]):
+    #     # needs to be placed here
+    #     tmp2 = recursive_search(P[T[0] + 1:], T[1:])
+    #     result += tmp2
+    # else:
+    #     if :
+    #         # print('  X')
+    #         tmp1 = recursive_search(P[T[0] + 1:], T[1:])
+
+    # result += tmp1
+    # result += tmp2
+    # print(P, T, '->', P[T[0] + 1:], T[1:], tmp1, P[1:], T, tmp2)
+    # if '#' in P[:m] and not '.' in P[:m]:
+        
+    
+
+    solutions[sol_key] = result
+    return result
+
+def part1_exp():
+    out = 0
+    with open('input.txt', 'r') as f:
+        lines = f.readlines()
+
+        for ii, line in enumerate(lines):
+            tmp = line.split(' ')
+            pattern = tmp[0]
+            targets = tuple([int(v) for v in tmp[1].split(',')])
+
+            #simplify the patter
+            while '..' in pattern:
+                pattern = pattern.replace('..', '.')
+            if pattern[0] == '.':
+                pattern = pattern[1:]
+            if pattern[-1] == '.':
+                pattern = pattern[:-1]
+
+
+            out += recursive_search(pattern, targets)
+
+            # for t in targets:
+
+            # min_len = np.sum(targets) + len(targets) - 1
+    
+    
+    return out
+
+def part2_exp():
+    out = 0
+    with open('input.txt', 'r') as f:
+        lines = f.readlines()
+
+        for ii, line in enumerate(lines):
+            tmp = line.split(' ')
+            pattern = tmp[0]
+            targets = tuple([int(v) for v in tmp[1].split(',')])
+
+            #simplify the patter
+            while '..' in pattern:
+                pattern = pattern.replace('..', '.')
+
+            pattern = '?'.join(pattern for _ in range(5))
+            if pattern[0] == '.':
+                pattern = pattern[1:]
+            if pattern[-1] == '.':
+                pattern = pattern[:-1]
+
+            
+            targets = tuple([targets[i] for _ in range(5) for i in range(len(targets))])
+            # print(pattern, targets)
+
+            out += recursive_search(pattern, targets)
+
+            # for t in targets:
+
+            # min_len = np.sum(targets) + len(targets) - 1
+    
+    
+    return out
+
+
+t0 = time()
+print(part1_exp(), time() - t0)
+
+t0 = time()
+print(part2_exp(), time() - t0)
+
+# for s in solutions:
+#     print(s, solutions[s])
+
+
+# ???.### 1,1,3
+# .??..??...?##. 1,1,3
+# ?#?#?#?#?#?#?#? 1,3,1,6
+# ????.#...#... 4,1,1
+# ????.######..#####. 1,6,5
+# ?###???????? 3,2,1

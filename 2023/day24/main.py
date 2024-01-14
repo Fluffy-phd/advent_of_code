@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 def intersects(u, v, x, y, z):
 
@@ -89,9 +91,14 @@ def part1():
                 answer += 1
     print(answer)
 
+def print_analysis(positionas, pic_fn, min_max):
+    pass
+
 def part2():
 
-    hailstone_paths = []
+    hailstone_paths_x = []
+    hailstone_paths_y = []
+    hailstone_paths_z = []
     with open('input.txt', 'r') as f:
         lines = f.readlines()
 
@@ -99,15 +106,19 @@ def part2():
             tmp = line.strip().split('@')
             pos = [int(v) for v in tmp[0].split(',')]
             vel = [int(v) for v in tmp[1].split(',')]
-            hailstone_paths.append([pos, vel])
+            hailstone_paths_x.append([pos[0], vel[0]])
+            hailstone_paths_y.append([pos[1], vel[1]])
+            hailstone_paths_z.append([pos[2], vel[2]])
+
+    print_analysis(hailstone_paths_x, 'x.png', [7, 27])
 
 
-    nhailstones = len(hailstone_paths)
-    answer = 0
-    for i in range(nhailstones):
-        for j in range(i + 1, nhailstones):
-            intersects_in_time(hailstone_paths[i], hailstone_paths[j], x = (200000000000000, 400000000000000), y = (200000000000000, 400000000000000), z = (200000000000000, 400000000000000))
-    print(answer)
+    # nhailstones = len(hailstone_paths)
+    # answer = 0
+    # for i in range(nhailstones):
+    #     for j in range(i + 1, nhailstones):
+    #         intersects_in_time(hailstone_paths[i], hailstone_paths[j], x = (200000000000000, 400000000000000), y = (200000000000000, 400000000000000), z = (200000000000000, 400000000000000))
+    # print(answer)
 
 # part1()
 part2()
